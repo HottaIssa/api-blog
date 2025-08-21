@@ -27,7 +27,7 @@ class PostController extends Controller
     public function show($post)
     {
         // $post = Post::find($post);
-        $post = Post::with('user')->where('id', $post)->first();
+        $post = Post::with('user', 'comment')->where('id', $post)->first();
 
         if (!$post) {
             $data = [
@@ -59,18 +59,26 @@ class PostController extends Controller
             ];
             return response()->json($data, 400);
         }
-        $post = new Post();
-        $post->title = $request->title;
-        $post->category = $request->category;
-        $post->content = $request->content;
-        $post->user_id = Auth::user()->id;
-        $post->save();
-        $data = [
-            'success' => true,
-            'message' => 'Post created successfully',
-            'post' => $post,
-        ];
-        return response()->json($data, 201);
+        try {
+            $post = new Post();
+            $post->title = $request->title;
+            $post->category = $request->category;
+            $post->content = $request->content;
+            $post->user_id = Auth::user()->id;
+            $post->save();
+            $data = [
+                'success' => true,
+                'message' => 'Post created successfully',
+                'post' => $post,
+            ];
+            return response()->json($data, 201);
+        } catch (\Exception $th) {
+            $data = [
+                'success' => false,
+                'message' => $th->getMessage()
+            ];
+            return response()->json($data, 403);
+        }
     }
 
     public function update(Request $request, $id)
@@ -134,7 +142,7 @@ class PostController extends Controller
             if (! Gate::allows('delete-post', $post)) {
                 $data = [
                     'success' => false,
-                    'message' => 'You are not authorized to update this post',
+                    'message' => 'You are not authorized to delete this post',
                 ];
                 return response()->json($data, 401);
             }

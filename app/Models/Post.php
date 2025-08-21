@@ -18,9 +18,14 @@ class Post extends Model
         "user_id"
     ];
 
-    function user()
+    public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function comment()
+    {
+        return $this->hasMany(Comment::class);
     }
 
     protected function casts(): array
