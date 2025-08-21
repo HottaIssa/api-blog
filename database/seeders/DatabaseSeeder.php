@@ -14,12 +14,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        Post::factory(100)->create();
+        $users = User::factory(10)->create();
+
+        Post::factory(100)->create([
+            'user_id' => fn() => $users->random()->id
+        ]);
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
     }
 }

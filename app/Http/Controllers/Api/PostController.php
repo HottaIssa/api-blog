@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 
 class PostController extends Controller
@@ -24,7 +26,9 @@ class PostController extends Controller
 
     public function show($post)
     {
-        $post = Post::find($post);
+        // $post = Post::find($post);
+        $post = Post::with('user')->where('id', $post)->first();
+
         if (!$post) {
             $data = [
                 'success' => false,
@@ -55,7 +59,12 @@ class PostController extends Controller
             ];
             return response()->json($data, 400);
         }
-        $post = Post::create($validator->validated());
+        $post = new Post();
+        $post->title = $request->title;
+        $post->category = $request->category;
+        $post->content = $request->content;
+        $post->user_id = Auth::user()->id;
+        $post->save();
         $data = [
             'success' => true,
             'message' => 'Post created successfully',
@@ -64,60 +73,90 @@ class PostController extends Controller
         return response()->json($data, 201);
     }
 
-    public function update(Request $request, $post)
+    public function update(Request $request, $id)
     {
-        $post = Post::find($post);
+        try {
+            $post = Post::find($id);
+            if (! Gate::allows('update-post', $post)) {
+                $data = [
+                    'success' => false,
+                    'message' => 'You are not authorized to update this post',
+                ];
+                return response()->json($data, 401);
+            }
 
-        if (!$post) {
+            if (!$post) {
+                $data = [
+                    'success' => false,
+                    'message' => 'Post not found'
+                ];
+                return response()->json($data, 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'title' => 'required|string|max:100',
+                'category' => 'required|string|max:255',
+                'content' => 'required|string|max:1000',
+            ]);
+            if ($validator->fails()) {
+                $data = [
+                    'success' => false,
+                    'message' => 'Validation data error',
+                    'errors' => $validator->errors()
+                ];
+                return response()->json($data, 400);
+            }
+
+            $post->title = $request->title;
+            $post->category = $request->category;
+            $post->content = $request->content;
+            $post->save();
+
+            $data = [
+                'success' => true,
+                'message' => 'Post udpated successfully',
+                'post' => $post,
+            ];
+            return response()->json($data, 201);
+        } catch (\Exception $th) {
             $data = [
                 'success' => false,
-                'message' => 'Post not found'
+                'message' => $th->getMessage()
             ];
-            return response()->json($data, 404);
+            return response()->json($data, 403);
         }
-
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:100',
-            'category' => 'required|string|max:255',
-            'content' => 'required|string|max:1000',
-        ]);
-        if ($validator->fails()) {
-            $data = [
-                'success' => false,
-                'message' => 'Validation data error',
-                'errors' => $validator->errors()
-            ];
-            return response()->json($data, 400);
-        }
-
-        $post->title = $request->title;
-        $post->category = $request->category;
-        $post->content = $request->content;
-        $post->save();
-
-        $data = [
-            'success' => true,
-            'message' => 'Post udpated successfully',
-            'post' => $post,
-        ];
-        return response()->json($data, 201);
     }
 
-    public function destroy($post)
+    public function destroy($id)
     {
-        $post = Post::find($post);
-        if (!$post) {
+        try {
+            $post = Post::find($id);
+            if (! Gate::allows('delete-post', $post)) {
+                $data = [
+                    'success' => false,
+                    'message' => 'You are not authorized to update this post',
+                ];
+                return response()->json($data, 401);
+            }
+            if (!$post) {
+                $data = [
+                    'success' => false,
+                    'message' => 'Post not found'
+                ];
+                return response()->json($data, 404);
+            }
+            $post->delete();
+            $data = [
+                'success' => true,
+                'message' => 'Post deleted successfully'
+            ];
+            return response()->json($data, 200);
+        } catch (\Exception $th) {
             $data = [
                 'success' => false,
-                'message' => 'Post not found'
+                'message' => $th->getMessage()
             ];
-            return response()->json($data, 404);
+            return response()->json($data, 403);
         }
-        $post->delete();
-        $data = [
-            'success' => true,
-            'message' => 'Post deleted successfully'
-        ];
-        return response()->json($data, 200);
     }
 }
