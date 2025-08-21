@@ -14,8 +14,14 @@ class Post extends Model
     public $fillable = [
         "title",
         "category",
-        "content"
+        "content",
+        "user_id"
     ];
+
+    function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     protected function casts(): array
     {

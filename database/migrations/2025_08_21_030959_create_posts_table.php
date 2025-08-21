@@ -17,6 +17,7 @@ return new class extends Migration
             $table->longText('content');
             $table->string('category');
             $table->boolean('is_active')->default(true);
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamp('published_at')->nullable();
             $table->timestamps();
         });
