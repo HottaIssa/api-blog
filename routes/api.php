@@ -22,5 +22,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/posts/{post}', [PostController::class, 'destroy']);
     Route::post('/posts/{posts}/comment', [CommentController::class, 'postComment']);
 });
-
-// Route::resource('posts', PostController::class);
